@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Supapulse — Supabase Keep-Alive Tool ⚡
 
-## Getting Started
+Supapulse, Supabase ücretsiz katman projelerinizin **7 günlük inaktivite nedeniyle duraklatılmasını (pause)** otomatik olarak engelleyen açık kaynaklı bir SaaS & Keep-Alive aracıdır.
 
-First, run the development server:
+---
+
+## 🎯 Özellikler
+
+- **Otomatik Arka Plan Pingleri:** Her 3 günde bir projelerinizin PostgREST uç noktasına (`/rest/v1/`) hafif `GET` istekleri atarak veritabanı bağlantı havuzunu uyanık tutar.
+- **Tek Tıkla Manuel Test ("Ping Now"):** Projenizin anlık durumunu, yanıt süresini ve HTTP kodunu panelden test edebilme.
+- **Şeffaf ve Güvenli:** Sadece projenizin **Anon Public Key** bilgisi saklanır. Gizli `service_role` anahtarınız asla istenmez veya saklanmaz.
+- **Supabase Auth:** GitHub OAuth ve E-posta (Magic Link) ile hızlı giriş.
+- **Vercel Cron:** Ek sunucu maliyeti olmadan sıfır maliyetli altyapı (`vercel.json`).
+
+---
+
+## 🚀 Kurulum & Çalıştırma (Self-Hosting)
+
+### 1. Depoyu Klonlayın ve Bağımlılıkları Kurun
+
+```bash
+git clone https://github.com/kullanici/supapulse.git
+cd supapulse
+npm install
+```
+
+### 2. Supabase Veritabanını Hazırlayın
+
+1. Yeni bir Supabase projesi oluşturun.
+2. Supabase Dashboard -> **SQL Editor** sekmesine gidin.
+3. Kök dizindeki [supabase_schema.sql](file:///Users/atalayhuryasar/Desktop/Supapulse/supabase_schema.sql) dosyasının içeriğini yapıştırıp çalıştırın (`Run`). Bu işlem `projects` ve `ping_logs` tabloları ile RLS politikalarını oluşturur.
+
+### 3. Çevre Değişkenlerini Tanımlayın
+
+`.env.example` dosyasını `.env.local` olarak kopyalayın:
+
+```bash
+cp .env.example .env.local
+```
+
+Aşağıdaki değişkenleri doldurun:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+CRON_SECRET=your-random-cron-secret-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### 4. Geliştirme Sunucusunu Başlatın
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresine gidin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⏱️ Vercel Üzerinde Cron Job Kurulumu
 
-## Learn More
+Vercel'e deploy ederken projenize `CRON_SECRET` ortam değişkenini eklediğinizden emin olun. Vercel, `vercel.json` dosyasında tanımlanan schedule (`0 0 */3 * *`) uyarınca `/api/cron/ping` endpoint'ini periyodik olarak güvenli bir şekilde tetikleyecektir.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛡️ Lisans
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Bu proje **MIT Lisansı** ile lisanslanmıştır.
