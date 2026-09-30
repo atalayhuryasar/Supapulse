@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/logo.png" alt="Supapulse Logo" width="80" height="80" onerror="this.style.display='none'"/>
+  <img src="https://raw.githubusercontent.com/atalayhuryasar/Supapulse/main/public/logo.svg" alt="Supapulse Logo" width="88" height="88" />
   
   # Supapulse ⚡
   
