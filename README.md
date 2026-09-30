@@ -1,47 +1,98 @@
-# Supapulse — Supabase Keep-Alive Tool ⚡
+<div align="center">
+  <img src="public/logo.png" alt="Supapulse Logo" width="80" height="80" onerror="this.style.display='none'"/>
+  
+  # Supapulse ⚡
+  
+  **Keep your free-tier Supabase projects awake, active, and unpaused — forever.**
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
+  [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Database-3ecf8e?logo=supabase)](https://supabase.com)
+  [![Vercel Cron](https://img.shields.io/badge/Vercel-Cron%20Job-blue?logo=vercel)](https://vercel.com)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-Supapulse, Supabase ücretsiz katman projelerinizin **7 günlük inaktivite nedeniyle duraklatılmasını (pause)** otomatik olarak engelleyen açık kaynaklı bir SaaS & Keep-Alive aracıdır.
+  [Live Demo](https://supapulse.huryasar.com) · [Report Bug](https://github.com/atalayhuryasar/Supapulse/issues) · [Request Feature](https://github.com/atalayhuryasar/Supapulse/issues) · [Türkçe Doküman](README.tr.md)
+
+  <br/>
+
+  [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fatalayhuryasar%2FSupapulse&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,CRON_SECRET,NEXT_PUBLIC_SITE_URL&project-name=supapulse&repo-name=supapulse)
+
+</div>
+
+<br/>
+
+## 💡 The Problem
+
+Supabase automatically pauses free-tier projects after **7 days of database inactivity** to conserve infrastructure resources. When a project is paused:
+- API requests fail with 503 errors.
+- Cold restarts take 30–60 seconds.
+- Side projects, staging environments, and client demos get unexpectedly interrupted.
+
+Setting up custom GitHub Actions workflows or external cron jobs for every project is repetitive and cumbersome.
+
+## ⚡ The Solution: Supapulse
+
+**Supapulse** is a lightweight, zero-maintenance, open-source heartbeat engine designed to prevent automatic pausing by executing automated, genuine PostgreSQL queries against your projects every 3 days.
+
+- 🔄 **Real Database Activity:** Executes lightweight SQL queries against the GoTrue auth engine (`auth.users`) to guarantee the Postgres pooler resets its inactivity timer.
+- 🔒 **Zero Privileged Keys:** Only your **Anon Public Key** is ever needed. Your master `service_role` secret key is **never** requested.
+- 🚀 **One-Click Deploy:** 100% serverless, zero cost on Vercel + Supabase Free Tier.
+- 📊 **Instant Dashboard:** One-click "Ping Now" button, latency tracking, and status logs.
 
 ---
 
-## 🎯 Özellikler
+## 🛠️ Architecture
 
-- **Otomatik Arka Plan Pingleri:** Her 3 günde bir projelerinizin PostgREST uç noktasına (`/rest/v1/`) hafif `GET` istekleri atarak veritabanı bağlantı havuzunu uyanık tutar.
-- **Tek Tıkla Manuel Test ("Ping Now"):** Projenizin anlık durumunu, yanıt süresini ve HTTP kodunu panelden test edebilme.
-- **Şeffaf ve Güvenli:** Sadece projenizin **Anon Public Key** bilgisi saklanır. Gizli `service_role` anahtarınız asla istenmez veya saklanmaz.
-- **Supabase Auth:** GitHub OAuth ve E-posta (Magic Link) ile hızlı giriş.
-- **Vercel Cron:** Ek sunucu maliyeti olmadan sıfır maliyetli altyapı (`vercel.json`).
-
----
-
-## 🚀 Kurulum & Çalıştırma (Self-Hosting)
-
-### 1. Depoyu Klonlayın ve Bağımlılıkları Kurun
-
-```bash
-git clone https://github.com/kullanici/supapulse.git
-cd supapulse
-npm install
+```mermaid
+graph TD
+    A[User / Developer] -->|1-Click Add Project| B[Supapulse Dashboard]
+    B -->|Store project URL & Anon Key| C[(Supabase Postgres DB)]
+    D[Vercel Cron: Every 3 Days] -->|Secure Bearer Request| E[API: /api/cron/ping]
+    E -->|Fetch Active Projects| C
+    E -->|Heartbeat POST /auth/v1/recover| F[Target Supabase Project]
+    F -->|Executes SELECT on auth.users| G[(Target Postgres Engine)]
+    G -->|Timer Reset 200 OK| E
+    E -->|Update Latency & Last Ping| C
 ```
 
-### 2. Supabase Veritabanını Hazırlayın
+---
 
-1. Yeni bir Supabase projesi oluşturun.
-2. Supabase Dashboard -> **SQL Editor** sekmesine gidin.
-3. Kök dizindeki [supabase_schema.sql](file:///Users/atalayhuryasar/Desktop/Supapulse/supabase_schema.sql) dosyasının içeriğini yapıştırıp çalıştırın (`Run`). Bu işlem `projects` ve `ping_logs` tabloları ile RLS politikalarını oluşturur.
+## 🚀 Quickstart & Self-Hosting
 
-### 3. Çevre Değişkenlerini Tanımlayın
+Deploy your own instance of Supapulse in less than 2 minutes:
 
-`.env.example` dosyasını `.env.local` olarak kopyalayın:
+### 1. One-Click Deploy to Vercel
+
+Click the button below to deploy your private Supapulse instance:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fatalayhuryasar%2FSupapulse&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,CRON_SECRET,NEXT_PUBLIC_SITE_URL&project-name=supapulse&repo-name=supapulse)
+
+### 2. Manual Setup (Local Development)
 
 ```bash
+# Clone repository
+git clone https://github.com/atalayhuryasar/Supapulse.git
+cd Supapulse
+
+# Install dependencies
+npm install
+
+# Copy environment template
 cp .env.example .env.local
 ```
 
-Aşağıdaki değişkenleri doldurun:
+### 3. Database Migration
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Go to **SQL Editor** in the Supabase Dashboard.
+3. Paste and run the contents of [`supabase_schema.sql`](supabase_schema.sql).
+
+### 4. Configure Environment Variables
+
+Fill in `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
@@ -49,22 +100,31 @@ CRON_SECRET=your-random-cron-secret-key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 4. Geliştirme Sunucusunu Başlatın
+### 5. Run Locally
 
 ```bash
 npm run dev
 ```
 
-Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresine gidin.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ⏱️ Vercel Üzerinde Cron Job Kurulumu
+## 🔒 Security & Privacy
 
-Vercel'e deploy ederken projenize `CRON_SECRET` ortam değişkenini eklediğinizden emin olun. Vercel, `vercel.json` dosyasında tanımlanan schedule (`0 0 */3 * *`) uyarınca `/api/cron/ping` endpoint'ini periyodik olarak güvenli bir şekilde tetikleyecektir.
+1. **No Sensitive Keys:** Supapulse never requests or stores Supabase `service_role` secrets. Only public `anon` / `publishable` keys are used.
+2. **Row Level Security (RLS):** Every user can only view, edit, or delete their own registered projects.
+3. **Protected Cron Worker:** The `/api/cron/ping` endpoint rejects any request without a valid `Authorization: Bearer <CRON_SECRET>` header.
 
 ---
 
-## 🛡️ Lisans
+## 🤝 Contributing
 
-Bu proje **MIT Lisansı** ile lisanslanmıştır.
+Contributions, bug reports, and feature requests are welcome!
+Please check out our [CONTRIBUTING.md](CONTRIBUTING.md) guide before submitting a PR.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) — free for personal and commercial use.

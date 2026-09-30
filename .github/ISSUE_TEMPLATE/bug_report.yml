@@ -1,0 +1,43 @@
+name: 🐛 Bug report
+description: Create a report to help us improve Supapulse
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: ex. email@example.com or @github_username
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Supapulse Version / Environment
+      description: Are you using the hosted version (supapulse.huryasar.com) or self-hosting?
+      placeholder: ex. Hosted or Self-hosted on Vercel
+    validations:
+      required: false
