@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Activity, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
+import { useLanguage, LanguageToggle } from '@/components/LanguageContext'
 
 function GithubIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -41,6 +42,7 @@ function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
 }
 
 function LoginContent() {
+  const { t } = useLanguage()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -68,7 +70,7 @@ function LoginContent() {
       })
       if (error) throw error
     } catch (err: unknown) {
-      setError((err as Error).message || 'Giriş yapılırken bir hata oluştu.')
+      setError((err as Error).message || 'Authentication error')
       setOauthLoading(null)
     }
   }
@@ -89,16 +91,20 @@ function LoginContent() {
         },
       })
       if (error) throw error
-      setMessage(`Giriş bağlantısı ${email} adresine gönderildi! E-posta kutunuzu (spam klasörü dahil) kontrol edin.`)
+      setMessage(t.login.magicLinkSent)
     } catch (err: unknown) {
-      setError((err as Error).message || 'Giriş bağlantısı gönderilemedi.')
+      setError((err as Error).message || 'Failed to send magic link.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#090d11] text-[#f0f6fc]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#090d11] text-[#f0f6fc] relative">
+      <div className="absolute top-6 right-6">
+        <LanguageToggle />
+      </div>
+
       <div className="max-w-md w-full p-8 rounded-2xl bg-[#161b22] border border-[#30363d] shadow-2xl relative overflow-hidden">
         {/* Ambient glow */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#3ecf8e]/10 rounded-full blur-3xl pointer-events-none" />
@@ -115,9 +121,9 @@ function LoginContent() {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-xl font-semibold mb-2">Giriş Yap veya Kayıt Ol</h1>
+          <h1 className="text-xl font-semibold mb-2">{t.login.welcome}</h1>
           <p className="text-sm text-neutral-400">
-            Supabase projelerinizi kesintisiz uyanık tutmaya başlayın.
+            {t.login.subtitle}
           </p>
         </div>
 
@@ -142,7 +148,7 @@ function LoginContent() {
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl font-medium bg-[#21262d] hover:bg-[#30363d] text-white border border-[#30363d] transition-all cursor-pointer disabled:opacity-50"
           >
             <GithubIcon className="w-5 h-5" />
-            {oauthLoading === 'github' ? 'Bağlanıyor...' : 'GitHub ile Devam Et'}
+            {oauthLoading === 'github' ? t.login.connecting : t.login.continueWithGithub}
           </button>
 
           <button
@@ -151,14 +157,14 @@ function LoginContent() {
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl font-medium bg-[#21262d] hover:bg-[#30363d] text-white border border-[#30363d] transition-all cursor-pointer disabled:opacity-50"
           >
             <GoogleIcon className="w-5 h-5" />
-            {oauthLoading === 'google' ? 'Bağlanıyor...' : 'Google ile Devam Et'}
+            {oauthLoading === 'google' ? t.login.connecting : t.login.continueWithGoogle}
           </button>
         </div>
 
         <div className="relative flex py-2 items-center mb-6">
           <div className="flex-grow border-t border-[#30363d]"></div>
           <span className="flex-shrink mx-4 text-xs uppercase text-neutral-500 font-semibold tracking-wider">
-            Veya Magic Link
+            {t.login.orMagicLink}
           </span>
           <div className="flex-grow border-t border-[#30363d]"></div>
         </div>
@@ -167,14 +173,14 @@ function LoginContent() {
         <form onSubmit={handleMagicLink} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">
-              E-posta Adresi
+              {t.login.emailLabel}
             </label>
             <div className="relative">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="adiniz@example.com"
+                placeholder={t.login.emailPlaceholder}
                 required
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] focus:border-[#3ecf8e] focus:outline-none text-white text-sm placeholder-neutral-500 transition-colors"
               />
@@ -187,13 +193,13 @@ function LoginContent() {
             disabled={loading || oauthLoading !== null}
             className="w-full py-2.5 px-4 rounded-xl font-medium bg-[#3ecf8e] hover:bg-[#33b37a] text-black transition-all cursor-pointer disabled:opacity-50 shadow-lg shadow-[#3ecf8e]/20 text-sm"
           >
-            {loading ? 'Gönderiliyor...' : 'Giriş Bağlantısı Gönder'}
+            {loading ? t.login.sending : t.login.sendMagicLink}
           </button>
         </form>
 
         <div className="mt-8 pt-6 border-t border-[#30363d] flex items-center justify-center gap-2 text-xs text-neutral-500">
           <ShieldCheck className="w-4 h-4 text-[#3ecf8e]" />
-          <span>Şifresiz Güvenli Giriş & RLS Koruması</span>
+          <span>{t.login.secureNote}</span>
         </div>
       </div>
     </div>
@@ -202,11 +208,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#090d11] text-[#f0f6fc]">
-        <div className="animate-pulse text-sm text-neutral-400">Yükleniyor...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#090d11] text-[#f0f6fc]">
+          <div className="animate-pulse text-sm text-neutral-400">Loading...</div>
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   )

@@ -7,6 +7,7 @@ import { AddProjectModal } from '@/components/AddProjectModal'
 import { Plus, Server, Activity, ShieldAlert, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useLanguage, LanguageToggle } from '@/components/LanguageContext'
 
 export function DashboardClient({
   initialProjects,
@@ -15,6 +16,7 @@ export function DashboardClient({
   initialProjects: Project[]
   userEmail?: string
 }) {
+  const { t } = useLanguage()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const router = useRouter()
 
@@ -41,6 +43,8 @@ export function DashboardClient({
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageToggle />
+
             <a
               href="https://github.com/atalayhuryasar/Supapulse"
               target="_blank"
@@ -58,7 +62,7 @@ export function DashboardClient({
             <button
               onClick={handleSignOut}
               className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors"
-              title="Çıkış Yap"
+              title={t.nav.signOut}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -75,7 +79,7 @@ export function DashboardClient({
               <Server className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs text-neutral-400 font-medium">Toplam Proje</p>
+              <p className="text-xs text-neutral-400 font-medium">{t.dashboard.totalProjects}</p>
               <p className="text-2xl font-bold text-white">{initialProjects.length}</p>
             </div>
           </div>
@@ -85,7 +89,7 @@ export function DashboardClient({
               <Activity className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs text-neutral-400 font-medium">Aktif Nabızlar</p>
+              <p className="text-xs text-neutral-400 font-medium">{t.dashboard.activePulses}</p>
               <p className="text-2xl font-bold text-white">{activeCount}</p>
             </div>
           </div>
@@ -95,8 +99,8 @@ export function DashboardClient({
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs text-neutral-400 font-medium">Ping Sıklığı</p>
-              <p className="text-lg font-bold text-white">Her 3 Günde 1</p>
+              <p className="text-xs text-neutral-400 font-medium">{t.dashboard.pingFrequency}</p>
+              <p className="text-lg font-bold text-white">{t.dashboard.pingFrequencyVal}</p>
             </div>
           </div>
         </div>
@@ -104,9 +108,9 @@ export function DashboardClient({
         {/* Action Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">İzlenen Projeler</h1>
+            <h1 className="text-2xl font-bold text-white">{t.dashboard.title}</h1>
             <p className="text-sm text-neutral-400">
-              Kayıtlı projeleriniz otomatik olarak uyanık tutulur.
+              {t.dashboard.subtitle}
             </p>
           </div>
           <button
@@ -114,7 +118,7 @@ export function DashboardClient({
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium bg-[#3ecf8e] hover:bg-[#33b37a] text-black transition-all cursor-pointer shadow-lg shadow-[#3ecf8e]/20 text-sm"
           >
             <Plus className="w-4 h-4" />
-            Proje Ekle
+            {t.dashboard.addProject}
           </button>
         </div>
 
@@ -124,15 +128,15 @@ export function DashboardClient({
             <div className="p-4 rounded-2xl bg-neutral-800/50 text-neutral-400 mb-4">
               <Server className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Henüz proje eklenmedi</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">{t.dashboard.emptyTitle}</h3>
             <p className="text-sm text-neutral-400 max-w-sm mb-6">
-              Supabase ücretsiz projenizi ekleyerek 7 gün sonra duraklatılmasını otomatik olarak engelleyin.
+              {t.dashboard.emptyDesc}
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-4 py-2 rounded-xl text-sm font-medium bg-[#3ecf8e] text-black hover:bg-[#33b37a] transition-colors"
             >
-              İlk Projeyi Ekle
+              {t.dashboard.firstProjectBtn}
             </button>
           </div>
         ) : (

@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { Activity, Shield, Zap, ArrowRight, Heart, Star, GitFork, BookOpen } from 'lucide-react'
+import { useLanguage, LanguageToggle } from '@/components/LanguageContext'
 
 function GithubIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -14,6 +17,8 @@ function GithubIcon({ className = 'w-5 h-5' }: { className?: string }) {
 }
 
 export default function HomePage() {
+  const { t } = useLanguage()
+
   return (
     <div className="min-h-screen bg-[#090d11] text-[#f0f6fc] flex flex-col justify-between selection:bg-[#3ecf8e]/30 selection:text-white">
       {/* Navigation */}
@@ -27,26 +32,28 @@ export default function HomePage() {
               Supapulse
             </span>
             <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#3ecf8e]/10 text-[#3ecf8e] border border-[#3ecf8e]/20 hidden sm:inline-block">
-              Open Source
+              {t.nav.openSourceBadge}
             </span>
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageToggle />
+
             <a
               href="https://github.com/atalayhuryasar/Supapulse"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#30363d] bg-[#161b22] hover:bg-[#21262d] text-xs font-medium text-neutral-300 transition-colors"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#30363d] bg-[#161b22] hover:bg-[#21262d] text-xs font-medium text-neutral-300 transition-colors"
             >
               <GithubIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Star on</span> GitHub
+              <span>{t.nav.starOnGithub}</span>
               <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 ml-0.5" />
             </a>
             <Link
               href="/login"
               className="text-xs sm:text-sm font-medium px-4 py-2 rounded-xl bg-[#3ecf8e] hover:bg-[#33b37a] text-black transition-all shadow-md shadow-[#3ecf8e]/20"
             >
-              Panoya Git
+              {t.nav.dashboard}
             </Link>
           </div>
         </div>
@@ -56,18 +63,16 @@ export default function HomePage() {
       <main className="max-w-4xl mx-auto px-4 py-20 sm:py-24 text-center relative">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#161b22] border border-[#30363d] text-xs text-[#3ecf8e] mb-6">
           <span className="w-2 h-2 rounded-full bg-[#3ecf8e] animate-ping" />
-          Açık Kaynak & %100 Ücretsiz (MIT License)
+          {t.hero.badge}
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-b from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent leading-tight">
-          Supabase projeleriniz <br />
-          <span className="text-[#3ecf8e]">asla uyumasın.</span>
+          {t.hero.title1} <br />
+          <span className="text-[#3ecf8e]">{t.hero.titleHighlight}</span>
         </h1>
 
         <p className="text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Supabase free-tier projelerinin 7 günlük inaktivite nedeniyle duraklatılmasını
-          otomatik PostgreSQL heartbeat pingleriyle engelleyin. Karmaşık cron scriptleri ve
-          GitHub Actions kurulumlarına son.
+          {t.hero.description}
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -75,7 +80,7 @@ export default function HomePage() {
             href="/login"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium bg-[#3ecf8e] hover:bg-[#33b37a] text-black transition-all shadow-xl shadow-[#3ecf8e]/20 text-sm"
           >
-            Hemen Kullanmaya Başla
+            {t.hero.ctaPrimary}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <a
@@ -85,7 +90,7 @@ export default function HomePage() {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium bg-[#161b22] hover:bg-[#21262d] text-white border border-[#30363d] transition-all text-sm"
           >
             <GithubIcon className="w-4 h-4" />
-            GitHub Deposu & Kaynak Kod
+            {t.hero.ctaGithub}
           </a>
         </div>
 
@@ -95,9 +100,9 @@ export default function HomePage() {
             <div className="p-3 w-fit rounded-xl bg-[#3ecf8e]/10 border border-[#3ecf8e]/20 text-[#3ecf8e] mb-4">
               <Zap className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold text-white text-base mb-2">Gerçek Postgres Sorgusu</h3>
+            <h3 className="font-semibold text-white text-base mb-2">{t.features.feature1Title}</h3>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Yüzeysel bir ping yerine doğrudan PostgreSQL motoruna sorgu atarak inaktivite sayacını kesin olarak sıfırlar.
+              {t.features.feature1Desc}
             </p>
           </div>
 
@@ -105,9 +110,9 @@ export default function HomePage() {
             <div className="p-3 w-fit rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 mb-4">
               <Shield className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold text-white text-base mb-2">Güvenli & Şeffaf</h3>
+            <h3 className="font-semibold text-white text-base mb-2">{t.features.feature2Title}</h3>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Yalnızca projenizin public anon key&apos;i kullanılır. Hizmet anahtarınız (service_role) asla talep edilmez.
+              {t.features.feature2Desc}
             </p>
           </div>
 
@@ -115,9 +120,9 @@ export default function HomePage() {
             <div className="p-3 w-fit rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-4">
               <Activity className="w-5 h-5" />
             </div>
-            <h3 className="font-semibold text-white text-base mb-2">Anlık Sağlık Takibi</h3>
+            <h3 className="font-semibold text-white text-base mb-2">{t.features.feature3Title}</h3>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Tüm projelerinizin durumunu, yanıt sürelerini ve son başarılı çalışma zamanını tek panelden izleyin.
+              {t.features.feature3Desc}
             </p>
           </div>
         </div>
@@ -127,10 +132,10 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-2 text-white font-medium text-sm mb-1">
               <BookOpen className="w-4 h-4 text-[#3ecf8e]" />
-              Kendi Sunucuna / Vercel Hesabına Kur (Self-Host)
+              {t.selfHost.title}
             </div>
             <p className="text-xs text-neutral-400">
-              Supapulse %100 açık kaynaklıdır. Kendi Vercel ve Supabase hesabınızda 2 dakikada sıfır maliyetle çalıştırabilirsiniz.
+              {t.selfHost.desc}
             </p>
           </div>
           <a
@@ -139,7 +144,7 @@ export default function HomePage() {
             rel="noreferrer"
             className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium border border-[#30363d] bg-[#21262d] hover:bg-[#30363d] text-white transition-colors"
           >
-            Kurulum Kılavuzu &rarr;
+            {t.selfHost.btn}
           </a>
         </div>
       </main>
@@ -148,9 +153,9 @@ export default function HomePage() {
       <footer className="border-t border-[#30363d]/50 py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
           <div className="flex items-center gap-2">
-            <span>Built with</span>
+            <span>{t.footer.builtWith}</span>
             <Heart className="w-3.5 h-3.5 text-red-500 fill-current inline" />
-            <span>by</span>
+            {t.footer.by && <span>{t.footer.by}</span>}
             <a
               href="https://github.com/atalayhuryasar"
               target="_blank"
@@ -159,7 +164,7 @@ export default function HomePage() {
             >
               Atalay Hüryaşar
             </a>
-            <span>& Open Source Contributors</span>
+            <span>{t.footer.andContributors}</span>
           </div>
 
           <div className="flex items-center gap-5">
@@ -170,7 +175,7 @@ export default function HomePage() {
               className="hover:text-white transition-colors flex items-center gap-1"
             >
               <GithubIcon className="w-3.5 h-3.5" />
-              GitHub
+              {t.footer.github}
             </a>
             <a
               href="https://github.com/atalayhuryasar/Supapulse/blob/main/LICENSE"
@@ -178,7 +183,7 @@ export default function HomePage() {
               rel="noreferrer"
               className="hover:text-white transition-colors"
             >
-              MIT License
+              {t.footer.license}
             </a>
             <a
               href="https://github.com/atalayhuryasar/Supapulse/blob/main/CONTRIBUTING.md"
@@ -187,7 +192,7 @@ export default function HomePage() {
               className="hover:text-white transition-colors flex items-center gap-1"
             >
               <GitFork className="w-3.5 h-3.5" />
-              Katkıda Bulun
+              {t.footer.contribute}
             </a>
           </div>
         </div>
