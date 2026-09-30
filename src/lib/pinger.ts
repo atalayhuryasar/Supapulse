@@ -7,11 +7,16 @@ export interface PingResult {
 }
 
 /**
- * Executes a heartbeat ping to keep Supabase projects alive and prevent inactivity pausing.
- * We test the project's health endpoints:
- * 1. `/auth/v1/health` (GoTrue Auth engine - returns 200 OK)
- * 2. `/rest-admin/v1/ready` (PostgREST readiness - returns 200 OK)
- * 3. Fallback to `/rest/v1/`
+ * Executes a deep heartbeat ping to keep Supabase projects alive and prevent inactivity pausing.
+ *
+ * Supabase pauses free-tier projects unless they receive actual *database activity* (SQL queries).
+ * Simply calling a static endpoint or health check doesn't guarantee the Postgres engine resets its timer.
+ *
+ * Strategy:
+ * 1. POST `/auth/v1/recover` with an internal probe email.
+ *    -> This causes the GoTrue Auth engine to perform a real `SELECT * FROM auth.users WHERE email = ...`
+ *    -> Wakes up the database pooler and executes active Postgres SQL without sending real emails.
+ * 2. Fallback to `/auth/v1/health` and `/rest-admin/v1/ready`.
  */
 export async function pingSupabaseProject(
   supabaseUrl: string,
@@ -23,22 +28,57 @@ export async function pingSupabaseProject(
     cleanUrl = `https://${cleanUrl}`
   }
 
-  const endpoints = [
+  const startTime = Date.now()
+
+  // 1. Primary Strategy: Real DB Query via Auth Recover
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
+    const dbProbeRes = await fetch(`${cleanUrl}/auth/v1/recover`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey.trim(),
+        Authorization: `Bearer ${anonKey.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: 'heartbeat_probe_supapulse@internal.invalid',
+      }),
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+
+    clearTimeout(timeoutId)
+    const responseTimeMs = Date.now() - startTime
+
+    // 200 OK means GoTrue queried Postgres auth.users successfully!
+    if (dbProbeRes.status === 200) {
+      return {
+        success: true,
+        statusCode: 200,
+        responseTimeMs,
+        message: 'Pulse successful (Active Postgres DB query executed: 200 OK)',
+        endpointTested: '/auth/v1/recover',
+      }
+    }
+  } catch (error) {
+    console.warn('DB probe error, falling back to health checks:', error)
+  }
+
+  // 2. Secondary Strategy: Fallback Health Checks
+  const fallbackEndpoints = [
     { path: '/auth/v1/health', name: 'Auth Health' },
     { path: '/rest-admin/v1/ready', name: 'PostgREST Ready' },
     { path: '/rest/v1/', name: 'REST Root' },
   ]
 
-  const startTime = Date.now()
-
-  for (const ep of endpoints) {
-    const fullUrl = `${cleanUrl}${ep.path}`
-
+  for (const ep of fallbackEndpoints) {
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout per attempt
+      const timeoutId = setTimeout(() => controller.abort(), 6000)
 
-      const res = await fetch(fullUrl, {
+      const res = await fetch(`${cleanUrl}${ep.path}`, {
         method: 'GET',
         headers: {
           apikey: anonKey.trim(),
@@ -51,30 +91,16 @@ export async function pingSupabaseProject(
       clearTimeout(timeoutId)
       const responseTimeMs = Date.now() - startTime
 
-      // If we get a 200 OK, return immediately!
       if (res.status === 200) {
         return {
           success: true,
-          statusCode: res.status,
+          statusCode: 200,
           responseTimeMs,
-          message: `Pulse successful (200 OK via ${ep.name})`,
-          endpointTested: ep.path,
-        }
-      }
-
-      // If we get < 500 (e.g. 401/404), continue to next endpoint if available
-      // but remember that any gateway response means project is reachable.
-      if (ep === endpoints[endpoints.length - 1]) {
-        return {
-          success: res.status < 500,
-          statusCode: res.status,
-          responseTimeMs,
-          message: `Pulse active (${res.status} ${res.statusText})`,
+          message: `Pulse successful (Health check: 200 OK via ${ep.name})`,
           endpointTested: ep.path,
         }
       }
     } catch {
-      // If error on this endpoint, try next
       continue
     }
   }
@@ -84,6 +110,6 @@ export async function pingSupabaseProject(
     success: false,
     statusCode: 0,
     responseTimeMs: totalTime,
-    message: 'Could not connect to project health endpoints (timed out)',
+    message: 'Could not connect to project database endpoints (timed out)',
   }
 }
