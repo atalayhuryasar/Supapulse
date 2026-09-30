@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Activity, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
@@ -40,7 +40,7 @@ function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
   )
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -197,5 +197,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#090d11] text-[#f0f6fc]">
+        <div className="animate-pulse text-sm text-neutral-400">Yükleniyor...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
