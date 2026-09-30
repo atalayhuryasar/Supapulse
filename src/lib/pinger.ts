@@ -3,12 +3,15 @@ export interface PingResult {
   statusCode: number
   responseTimeMs: number
   message: string
+  endpointTested?: string
 }
 
 /**
- * Executes a lightweight REST ping to a Supabase project.
- * Targeting `/rest/v1/` with the project's anon key triggers PostgREST
- * and wakes the Postgres instance / connection pool without heavy overhead.
+ * Executes a heartbeat ping to keep Supabase projects alive and prevent inactivity pausing.
+ * We test the project's health endpoints:
+ * 1. `/auth/v1/health` (GoTrue Auth engine - returns 200 OK)
+ * 2. `/rest-admin/v1/ready` (PostgREST readiness - returns 200 OK)
+ * 3. Fallback to `/rest/v1/`
  */
 export async function pingSupabaseProject(
   supabaseUrl: string,
@@ -20,46 +23,67 @@ export async function pingSupabaseProject(
     cleanUrl = `https://${cleanUrl}`
   }
 
-  const endpoint = `${cleanUrl}/rest/v1/`
+  const endpoints = [
+    { path: '/auth/v1/health', name: 'Auth Health' },
+    { path: '/rest-admin/v1/ready', name: 'PostgREST Ready' },
+    { path: '/rest/v1/', name: 'REST Root' },
+  ]
+
   const startTime = Date.now()
 
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+  for (const ep of endpoints) {
+    const fullUrl = `${cleanUrl}${ep.path}`
 
-    const res = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        apikey: anonKey.trim(),
-        Authorization: `Bearer ${anonKey.trim()}`,
-      },
-      signal: controller.signal,
-      cache: 'no-store',
-    })
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout per attempt
 
-    clearTimeout(timeoutId)
-    const responseTimeMs = Date.now() - startTime
+      const res = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          apikey: anonKey.trim(),
+          Authorization: `Bearer ${anonKey.trim()}`,
+        },
+        signal: controller.signal,
+        cache: 'no-store',
+      })
 
-    // PostgREST responds with 200 (or OpenAPI doc) if valid, or sometimes 401/403/404 if keys differ.
-    // However, ANY response from the project instance means the project woke up!
-    const isSuccess = res.status < 500
+      clearTimeout(timeoutId)
+      const responseTimeMs = Date.now() - startTime
 
-    return {
-      success: isSuccess,
-      statusCode: res.status,
-      responseTimeMs,
-      message: isSuccess
-        ? `Pulse successful (${res.status} ${res.statusText})`
-        : `Server returned error (${res.status} ${res.statusText})`,
+      // If we get a 200 OK, return immediately!
+      if (res.status === 200) {
+        return {
+          success: true,
+          statusCode: res.status,
+          responseTimeMs,
+          message: `Pulse successful (200 OK via ${ep.name})`,
+          endpointTested: ep.path,
+        }
+      }
+
+      // If we get < 500 (e.g. 401/404), continue to next endpoint if available
+      // but remember that any gateway response means project is reachable.
+      if (ep === endpoints[endpoints.length - 1]) {
+        return {
+          success: res.status < 500,
+          statusCode: res.status,
+          responseTimeMs,
+          message: `Pulse active (${res.status} ${res.statusText})`,
+          endpointTested: ep.path,
+        }
+      }
+    } catch {
+      // If error on this endpoint, try next
+      continue
     }
-  } catch (error: unknown) {
-    const responseTimeMs = Date.now() - startTime
-    const err = error as Error
-    return {
-      success: false,
-      statusCode: 0,
-      responseTimeMs,
-      message: err.name === 'AbortError' ? 'Connection timed out (10s)' : (err.message || 'Unknown network error'),
-    }
+  }
+
+  const totalTime = Date.now() - startTime
+  return {
+    success: false,
+    statusCode: 0,
+    responseTimeMs: totalTime,
+    message: 'Could not connect to project health endpoints (timed out)',
   }
 }
