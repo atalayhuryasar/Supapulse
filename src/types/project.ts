@@ -11,6 +11,7 @@ export interface Project {
   last_ping_message: string | null
   created_at: string
   updated_at: string
+  ping_logs?: PingLog[]
 }
 
 export interface PingLog {
