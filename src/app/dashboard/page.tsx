@@ -18,7 +18,7 @@ export default async function DashboardPage() {
 
   const { data: projects, error } = await supabase
     .from('projects')
-    .select('*')
+    .select('*, ping_logs(id, project_id, status, status_code, response_time_ms, message, created_at)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 

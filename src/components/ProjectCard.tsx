@@ -19,12 +19,23 @@ export function ProjectCard({ project }: { project: Project }) {
       })
       const data = await res.json()
 
+      const newLog = {
+        id: Date.now(),
+        project_id: currentProject.id,
+        status: data.success ? ('success' as const) : ('failed' as const),
+        status_code: data.statusCode,
+        response_time_ms: data.responseTimeMs,
+        message: data.message,
+        created_at: new Date().toISOString(),
+      }
+
       setCurrentProject((prev) => ({
         ...prev,
         last_ping_at: new Date().toISOString(),
         last_ping_status: data.success ? 'success' : 'failed',
         last_ping_code: data.statusCode,
         last_ping_message: data.message,
+        ping_logs: [...(prev.ping_logs || []), newLog],
       }))
     } catch (err) {
       console.error(err)
@@ -134,6 +145,54 @@ export function ProjectCard({ project }: { project: Project }) {
               {currentProject.last_ping_message}
             </div>
           )}
+
+          {/* Uptime & Latency History Bars */}
+          {currentProject.ping_logs && currentProject.ping_logs.length > 0 && (() => {
+            const logs = [...currentProject.ping_logs]
+              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+              .slice(-10)
+
+            const validLatencies = logs
+              .map((l) => l.response_time_ms)
+              .filter((ms): ms is number => typeof ms === 'number' && ms > 0)
+
+            const avgMs =
+              validLatencies.length > 0
+                ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length)
+                : null
+
+            return (
+              <div className="pt-2 border-t border-[#30363d]/40">
+                <div className="flex items-center justify-between text-[11px] text-neutral-400 mb-1.5">
+                  <span>{t.card.uptimeHistory}</span>
+                  {avgMs !== null && (
+                    <span className="font-mono text-emerald-400">
+                      ~{avgMs}ms {t.card.avgLatency}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 h-6">
+                  {logs.map((log, idx) => {
+                    const isSuccess = log.status === 'success'
+                    return (
+                      <div
+                        key={log.id || idx}
+                        title={`${new Date(log.created_at).toLocaleTimeString(lang === 'tr' ? 'tr-TR' : 'en-US')}: ${
+                          isSuccess ? `${t.card.activeSuccess} (${log.response_time_ms || 0}ms)` : `${t.card.failed}: ${log.message || 'Error'}`
+                        }`}
+                        className={`flex-1 h-5 rounded transition-all hover:scale-110 cursor-pointer ${
+                          isSuccess
+                            ? 'bg-[#3ecf8e] hover:bg-[#33b37a] shadow-[0_0_8px_rgba(62,207,142,0.3)]'
+                            : 'bg-red-500 hover:bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
+                        }`}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
 
