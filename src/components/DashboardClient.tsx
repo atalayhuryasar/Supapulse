@@ -4,17 +4,19 @@ import { useState } from 'react'
 import { Project } from '@/types/project'
 import { ProjectCard } from '@/components/ProjectCard'
 import { AddProjectModal } from '@/components/AddProjectModal'
-import { Plus, Server, Activity, ShieldAlert, LogOut } from 'lucide-react'
+import { Plus, Server, Activity, ShieldAlert, LogOut, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useLanguage, LanguageToggle } from '@/components/LanguageContext'
 
 export function DashboardClient({
   initialProjects,
-  userEmail,
+  userDisplayName,
+  userAvatar,
 }: {
   initialProjects: Project[]
-  userEmail?: string
+  userDisplayName?: string
+  userAvatar?: string
 }) {
   const { t } = useLanguage()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -56,9 +58,22 @@ export function DashboardClient({
               </svg>
               <span>GitHub</span>
             </a>
-            <span className="text-xs text-neutral-400 hidden md:inline-block">
-              {userEmail}
-            </span>
+
+            <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-xl border border-[#30363d] bg-[#0d1117] text-xs text-neutral-300">
+              {userAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={userAvatar}
+                  alt={userDisplayName || 'User'}
+                  className="w-4 h-4 rounded-full border border-neutral-700 object-cover"
+                />
+              ) : (
+                <User className="w-3.5 h-3.5 text-neutral-400" />
+              )}
+              <span className="font-medium truncate max-w-[180px]">
+                {userDisplayName || 'Developer'}
+              </span>
+            </div>
             <button
               onClick={handleSignOut}
               className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-[#21262d] transition-colors"
