@@ -26,10 +26,23 @@ export default async function DashboardPage() {
     console.error('Error fetching projects:', error)
   }
 
+  const userMetadata = user.user_metadata || {}
+  const userDisplayName =
+    user.email ||
+    userMetadata.full_name ||
+    userMetadata.name ||
+    (userMetadata.user_name ? `@${userMetadata.user_name}` : null) ||
+    (userMetadata.preferred_username ? `@${userMetadata.preferred_username}` : null) ||
+    'Developer'
+
+  const userAvatar = (userMetadata.avatar_url as string) || (userMetadata.picture as string) || undefined
+
   return (
     <DashboardClient
       initialProjects={(projects as Project[]) || []}
-      userEmail={user.email}
+      userDisplayName={userDisplayName}
+      userAvatar={userAvatar}
     />
   )
 }
+
