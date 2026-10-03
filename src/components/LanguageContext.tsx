@@ -17,7 +17,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('supapulse_lang') as Language
     if (saved === 'en' || saved === 'tr') {
-      setLangState(saved)
+      queueMicrotask(() => {
+        setLangState(saved)
+      })
     }
   }, [])
 
