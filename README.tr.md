@@ -37,10 +37,13 @@ grant execute on function public.supapulse_heartbeat() to anon, authenticated;
 
 ---
 
-### 🤖 AI Agent İle Tek Tıkla Kurulum (Cursor, Windsurf, Claude)
+### 🤖 AI Agent İle Tek Tıkla Kurulum ve Canlıya Alma (Cursor, Windsurf, Claude)
 
-Eğer projenizi bir yapay zeka kodlama asistanıyla (Cursor, Windsurf, GitHub Copilot veya Claude) geliştiriyorsanız, asistanınıza şu istemi yapıştırmanız yeterlidir:
+Yapay zeka kodlama asistanlarıyla geliştirme yapıyor veya otonom bir ajanın sizin yerinize hiç kod yazmadan Supapulse'ı kurmasını istiyorsanız, detaylı istemlerin yer aldığı [AGENT_GUIDE.tr.md](AGENT_GUIDE.tr.md) rehberimizi inceleyin:
+* **Hedef Proje Bağlantısı:** Heartbeat fonksiyonunu kurup public anahtarları otomatik listeler.
+* **Sıfır Kodla Self-Host Kurulum:** Otonom agent'lara (Claude Code, Antigravity, Cursor Agent) Vercel + Supabase üzerinde sıfırdan canlı bir Supapulse örneği kurdurur.
 
+> **Hızlı Proje Entegrasyon İstemi:**
 > *"Supabase veritabanımı Supapulse keep-alive servisine hazırlamak için şu SQL'i çalıştır: `create or replace function public.supapulse_heartbeat() returns text language sql security definer as $$ select 'pulse_ok'; $$; grant execute on function public.supapulse_heartbeat() to anon, authenticated;` ve ardından bana proje URL ve Anon Public Key bilgilerimi ver."*
 
 ---

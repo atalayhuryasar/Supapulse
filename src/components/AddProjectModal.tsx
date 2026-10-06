@@ -26,13 +26,20 @@ grant execute on function public.supapulse_heartbeat() to anon, authenticated;`
 
   const handleCopyPrompt = (e: React.MouseEvent) => {
     e.preventDefault()
-    const prompt = `Please configure my Supabase project for Supapulse keep-alive by executing the following heartbeat RPC function:
+    const prompt = `You are an expert full-stack engineer and Supabase specialist.
+Configure this project for Supapulse keep-alive by following these steps:
 
-create or replace function public.supapulse_heartbeat()
-returns text language sql security definer as $$ select 'pulse_ok'; $$;
-grant execute on function public.supapulse_heartbeat() to anon, authenticated;
+1. Create and execute this dedicated heartbeat RPC function in Supabase:
+CREATE OR REPLACE FUNCTION public.supapulse_heartbeat()
+RETURNS text LANGUAGE sql SECURITY DEFINER AS $$ SELECT 'pulse_ok'; $$;
+GRANT EXECUTE ON FUNCTION public.supapulse_heartbeat() TO anon, authenticated;
 
-After running it, please provide my Supabase Project URL and Anon Public Key so I can register it on Supapulse.`
+2. Inspect local env files (.env, .env.local) to find:
+- Project URL (NEXT_PUBLIC_SUPABASE_URL)
+- Anon Key (NEXT_PUBLIC_SUPABASE_ANON_KEY)
+(NEVER share or expose the service_role secret key)
+
+3. Provide the URL and Anon Key so I can paste them into Supapulse (https://supapulse.huryasar.com).`
     navigator.clipboard.writeText(prompt)
     setCopiedPrompt(true)
     setTimeout(() => setCopiedPrompt(false), 2000)
