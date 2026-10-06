@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Globe, Key, Tag, Database } from 'lucide-react'
+import { Plus, X, Globe, Key, Tag, Database, ShieldCheck, Copy, Check, Sparkles } from 'lucide-react'
 import { createProject } from '@/app/actions/project-actions'
 import { useLanguage } from '@/components/LanguageContext'
 
@@ -9,8 +9,34 @@ export function AddProjectModal({ isOpen, onClose }: { isOpen: boolean; onClose:
   const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copiedSql, setCopiedSql] = useState(false)
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
 
   if (!isOpen) return null
+
+  const handleCopySql = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const sql = `create or replace function public.supapulse_heartbeat()
+returns text language sql security definer as $$ select 'pulse_ok'; $$;
+grant execute on function public.supapulse_heartbeat() to anon, authenticated;`
+    navigator.clipboard.writeText(sql)
+    setCopiedSql(true)
+    setTimeout(() => setCopiedSql(false), 2000)
+  }
+
+  const handleCopyPrompt = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const prompt = `Please configure my Supabase project for Supapulse keep-alive by executing the following heartbeat RPC function:
+
+create or replace function public.supapulse_heartbeat()
+returns text language sql security definer as $$ select 'pulse_ok'; $$;
+grant execute on function public.supapulse_heartbeat() to anon, authenticated;
+
+After running it, please provide my Supabase Project URL and Anon Public Key so I can register it on Supapulse.`
+    navigator.clipboard.writeText(prompt)
+    setCopiedPrompt(true)
+    setTimeout(() => setCopiedPrompt(false), 2000)
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,7 +57,7 @@ export function AddProjectModal({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="max-w-md w-full bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-2xl relative">
+      <div className="max-w-lg w-full bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-[#3ecf8e]/10 text-[#3ecf8e]">
@@ -52,6 +78,35 @@ export function AddProjectModal({ isOpen, onClose }: { isOpen: boolean; onClose:
             {error}
           </div>
         )}
+
+        {/* Pro Security & Heartbeat RPC Guide Box */}
+        <div className="mb-5 p-3.5 rounded-xl bg-[#0e1713] border border-[#3ecf8e]/25 text-neutral-300 text-xs space-y-2.5">
+          <div className="flex items-center gap-1.5 text-[#3ecf8e] font-medium text-xs">
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span>{t.modal.proSecurityTitle}</span>
+          </div>
+          <p className="text-[11px] text-neutral-400 leading-relaxed">
+            {t.modal.proSecurityDesc}
+          </p>
+          <div className="flex items-center gap-2 flex-wrap pt-0.5">
+            <button
+              type="button"
+              onClick={handleCopySql}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a2e24] hover:bg-[#244233] border border-[#3ecf8e]/30 text-[#3ecf8e] text-[11px] font-medium transition-colors cursor-pointer"
+            >
+              {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedSql ? t.modal.sqlCopied : t.modal.copySqlBtn}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyPrompt}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-neutral-700 text-neutral-300 text-[11px] font-medium transition-colors cursor-pointer"
+            >
+              {copiedPrompt ? <Check className="w-3.5 h-3.5 text-[#3ecf8e]" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+              <span>{copiedPrompt ? t.modal.agentPromptCopied : t.modal.copyAgentPromptBtn}</span>
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -40,6 +40,36 @@ export async function pingSupabaseProject(
     Authorization: `Bearer ${cleanKey}`,
   }
 
+  // 0. Golden Strategy: Dedicated Heartbeat RPC (Zero Table Exposure, RLS-Proof)
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const rpcRes = await fetch(`${cleanUrl}/rest/v1/rpc/supapulse_heartbeat`, {
+      method: 'POST',
+      headers: {
+        ...defaultHeaders,
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+    clearTimeout(timeoutId)
+
+    if (rpcRes.status === 200) {
+      const responseTimeMs = Date.now() - startTime
+      return {
+        success: true,
+        statusCode: 200,
+        responseTimeMs,
+        message: 'Pulse successful (Dedicated Heartbeat RPC: 200 OK)',
+        endpointTested: '/rest/v1/rpc/supapulse_heartbeat',
+      }
+    }
+  } catch {
+    // Continue to Table & Gateway strategies if RPC is not installed
+  }
+
   // 1. Primary Strategy: Direct PostgreSQL Table Read via PostgREST
   const sanitizedTarget = targetTable?.trim().replace(/^\/+/, '')
   const commonTables = [
