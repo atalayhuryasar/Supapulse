@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Globe, Key, Tag } from 'lucide-react'
+import { Plus, X, Globe, Key, Tag, Database } from 'lucide-react'
 import { createProject } from '@/app/actions/project-actions'
 import { useLanguage } from '@/components/LanguageContext'
 
@@ -96,6 +96,21 @@ export function AddProjectModal({ isOpen, onClose }: { isOpen: boolean; onClose:
             />
             <p className="text-[11px] text-neutral-500 mt-1">
               {t.modal.keyHint}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-neutral-400" /> {t.modal.targetTableLabel}
+            </label>
+            <input
+              type="text"
+              name="target_table"
+              placeholder={t.modal.targetTablePlaceholder}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] text-white text-sm focus:border-[#3ecf8e] focus:outline-none placeholder-neutral-500 font-mono text-xs"
+            />
+            <p className="text-[11px] text-neutral-500 mt-1">
+              {t.modal.targetTableHint}
             </p>
           </div>
 

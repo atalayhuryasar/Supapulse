@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // Fetch all active projects
     const { data: projects, error } = await supabase
       .from('projects')
-      .select('id, name, supabase_url, anon_key')
+      .select('*')
       .eq('is_active', true)
 
     if (error) {
@@ -37,7 +37,11 @@ export async function GET(request: NextRequest) {
 
     // Process pings in parallel (with limit)
     for (const project of projects) {
-      const pingResult = await pingSupabaseProject(project.supabase_url, project.anon_key)
+      const pingResult = await pingSupabaseProject(
+        project.supabase_url,
+        project.anon_key,
+        project.target_table
+      )
 
       // Update project status
       await supabase

@@ -89,15 +89,22 @@ export function ProjectCard({ project }: { project: Project }) {
               <h3 className="font-semibold text-white text-base leading-snug truncate" title={currentProject.name}>
                 {currentProject.name}
               </h3>
-              <a
-                href={currentProject.supabase_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-neutral-400 hover:text-[#3ecf8e] inline-flex items-center gap-1 mt-0.5 max-w-full group/link"
-              >
-                <span className="truncate">{new URL(currentProject.supabase_url).hostname}</span>
-                <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover/link:opacity-100" />
-              </a>
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                <a
+                  href={currentProject.supabase_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-neutral-400 hover:text-[#3ecf8e] inline-flex items-center gap-1 max-w-full group/link"
+                >
+                  <span className="truncate">{new URL(currentProject.supabase_url).hostname}</span>
+                  <ExternalLink className="w-3 h-3 shrink-0 opacity-70 group-hover/link:opacity-100" />
+                </a>
+                {currentProject.target_table && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#21262d] border border-[#30363d] text-neutral-300 font-mono">
+                    table: {currentProject.target_table}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
