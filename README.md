@@ -32,28 +32,48 @@ Setting up custom GitHub Actions workflows or external cron jobs for every proje
 
 ## ⚡ The Solution: Supapulse
 
-**Supapulse** is a lightweight, zero-maintenance, open-source heartbeat engine designed to prevent automatic pausing by executing automated, genuine PostgreSQL queries against your projects every 3 days.
+**Supapulse** is a lightweight, zero-maintenance, open-source heartbeat engine designed to prevent automatic pausing by executing automated, genuine PostgreSQL queries and API traffic against your projects **daily**.
 
-- 🔄 **Real Database Activity:** Executes lightweight SQL queries against the GoTrue auth engine (`auth.users`) to guarantee the Postgres pooler resets its inactivity timer.
+- 🔄 **Multi-Layered Database Activity:** Executes genuine PostgREST read queries and gateway heartbeats to guarantee the Postgres pooler and Supabase API gateway reset their inactivity timer.
+- 🎯 **Optional Custom Target Table:** Specify an exact table (e.g., `todos`, `profiles`, `products`) or let Supapulse automatically probe common schema tables.
 - 🔒 **Zero Privileged Keys:** Only your **Anon Public Key** is ever needed. Your master `service_role` secret key is **never** requested.
 - 🚀 **One-Click Deploy:** 100% serverless, zero cost on Vercel + Supabase Free Tier.
-- 📊 **Instant Dashboard:** One-click "Ping Now" button, latency tracking, and status logs.
+- 📊 **Instant Dashboard:** One-click "Ping Now" button, latency tracking, uptime history bars, and status logs.
 
 ---
 
-## 🛠️ Architecture
+## 🛠️ Architecture & Multi-Layered Ping Strategy
+
+How does Supapulse know where to ping and ensure your project never pauses?
+
+Supabase monitors **database activity (PostgreSQL queries)** and **API gateway traffic** via its edge proxies (Kong/Envoy). Supapulse uses a resilient, three-layer strategy:
 
 ```mermaid
 graph TD
-    A[User / Developer] -->|1-Click Add Project| B[Supapulse Dashboard]
-    B -->|Store project URL & Anon Key| C[(Supabase Postgres DB)]
-    D[Vercel Cron: Every 3 Days] -->|Secure Bearer Request| E[API: /api/cron/ping]
-    E -->|Fetch Active Projects| C
-    E -->|Heartbeat POST /auth/v1/recover| F[Target Supabase Project]
-    F -->|Executes SELECT on auth.users| G[(Target Postgres Engine)]
-    G -->|Timer Reset 200 OK| E
-    E -->|Update Latency & Last Ping| C
+    A[Vercel Cron: Daily 04:00 UTC] -->|Secure Bearer Auth| B[API: /api/cron/ping]
+    B -->|Fetch Active Projects| C[(Supapulse DB)]
+    B -->|1. PostgREST Query| D{Target Table Specified?}
+    D -->|Yes| E[GET /rest/v1/custom_table?select=*&limit=1]
+    D -->|No: Auto-Discovery| F[Parallel probe on common tables: users, profiles, todos...]
+    E -->|Executes genuine SQL SELECT| G[(Target PostgreSQL DB)]
+    F -->|Executes genuine SQL SELECT| G
+    G -->|Timer Reset 200 OK| B
+    B -.->|Fallback 2: API Gateway & GraphQL| H[OPTIONS /rest/v1/ & POST /graphql/v1]
+    B -.->|Fallback 3: Auth Engine Probe| I[POST /auth/v1/recover]
+    B -->|Record Latency & Ping Log| C
 ```
+
+### 1. Layer 1: Direct PostgreSQL Table Read (PostgREST)
+* **Custom Table:** When registering a project, you can optionally provide a specific table name from your database (e.g. `todos`, `items`, `profiles`). Supapulse prioritizes this table for direct database reads.
+* **Auto-Discovery:** If left empty, Supapulse runs a parallel probe across the top 15 most common application tables (`reservations`, `activities`, `profiles`, `users`, `todos`, `items`, `posts`, `projects`, `accounts`, `notes`, `logs`, `settings`, `events`, etc.).
+* **Result:** PostgREST executes a real `SELECT ... LIMIT 1` query on your PostgreSQL instance, fully resetting the 7-day inactivity pause counter.
+
+### 2. Layer 2: API Gateway & GraphQL Probes
+* If common tables are protected by strict Row Level Security (RLS) or use custom names, Supapulse calls `OPTIONS /rest/v1/` and `POST /graphql/v1`.
+* These requests route through Supabase's **Kong API Gateway** with your project's reference (`sb-project-ref`), registering active API traffic at the network edge.
+
+### 3. Layer 3: Auth Engine Probe (GoTrue)
+* As a final safety net, Supapulse pings `/auth/v1/recover` and `/auth/v1/health` to stimulate the GoTrue authentication microservice.
 
 ---
 

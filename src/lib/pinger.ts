@@ -23,7 +23,8 @@ export interface PingResult {
  */
 export async function pingSupabaseProject(
   supabaseUrl: string,
-  anonKey: string
+  anonKey: string,
+  targetTable?: string | null
 ): Promise<PingResult> {
   // Normalize URL
   let cleanUrl = supabaseUrl.trim().replace(/\/+$/, '')
@@ -40,7 +41,9 @@ export async function pingSupabaseProject(
   }
 
   // 1. Primary Strategy: Direct PostgreSQL Table Read via PostgREST
+  const sanitizedTarget = targetTable?.trim().replace(/^\/+/, '')
   const commonTables = [
+    ...(sanitizedTarget ? [sanitizedTarget] : []),
     'reservations',
     'activities',
     'profiles',

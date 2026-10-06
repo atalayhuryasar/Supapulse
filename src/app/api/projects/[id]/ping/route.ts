@@ -31,7 +31,11 @@ export async function POST(
   }
 
   // Ping project
-  const pingResult = await pingSupabaseProject(project.supabase_url, project.anon_key)
+  const pingResult = await pingSupabaseProject(
+    project.supabase_url,
+    project.anon_key,
+    project.target_table
+  )
 
   // Update project in DB
   const { error: updateErr } = await supabase

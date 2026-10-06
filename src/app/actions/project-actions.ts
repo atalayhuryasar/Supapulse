@@ -17,6 +17,7 @@ export async function createProject(formData: FormData) {
   const name = formData.get('name') as string
   let supabase_url = (formData.get('supabase_url') as string)?.trim()
   const anon_key = (formData.get('anon_key') as string)?.trim()
+  const target_table = (formData.get('target_table') as string)?.trim().replace(/^\/+/, '') || null
 
   if (!name || !supabase_url || !anon_key) {
     return { error: 'Lütfen tüm alanları doldurun' }
@@ -26,13 +27,25 @@ export async function createProject(formData: FormData) {
     supabase_url = `https://${supabase_url}`
   }
 
-  const { error } = await supabase.from('projects').insert({
+  const payload: Record<string, unknown> = {
     user_id: user.id,
     name,
     supabase_url,
     anon_key,
     is_active: true,
-  })
+  }
+  if (target_table) {
+    payload.target_table = target_table
+  }
+
+  let { error } = await supabase.from('projects').insert(payload)
+
+  // Gracefully fallback if target_table column does not exist yet on DB
+  if (error && error.message?.includes('target_table')) {
+    delete payload.target_table
+    const retry = await supabase.from('projects').insert(payload)
+    error = retry.error
+  }
 
   if (error) {
     return { error: error.message }

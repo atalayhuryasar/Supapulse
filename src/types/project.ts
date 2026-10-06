@@ -4,6 +4,7 @@ export interface Project {
   name: string
   supabase_url: string
   anon_key: string
+  target_table?: string | null
   is_active: boolean
   last_ping_at: string | null
   last_ping_status: 'success' | 'failed' | 'pending' | null
