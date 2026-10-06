@@ -83,3 +83,21 @@ create or replace trigger set_projects_updated_at
   before update on public.projects
   for each row
   execute function public.handle_updated_at();
+
+-- 3. Role Privileges & Grants (Critical for background cron service_role and authenticated users)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on table public.projects to service_role, authenticated;
+grant all on table public.ping_logs to service_role, authenticated;
+grant usage, select on all sequences in schema public to service_role, authenticated;
+
+-- Policy to allow authenticated users to insert ping logs for their own projects
+create policy "Users can insert ping logs for their own projects"
+  on public.ping_logs for insert
+  with check (
+    exists (
+      select 1 from public.projects
+      where public.projects.id = public.ping_logs.project_id
+      and public.projects.user_id = auth.uid()
+    )
+  );
+
