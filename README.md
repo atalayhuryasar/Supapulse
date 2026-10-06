@@ -52,27 +52,54 @@ Supabase monitors **database activity (PostgreSQL queries)** and **API gateway t
 graph TD
     A[Vercel Cron: Daily 04:00 UTC] -->|Secure Bearer Auth| B[API: /api/cron/ping]
     B -->|Fetch Active Projects| C[(Supapulse DB)]
-    B -->|1. PostgREST Query| D{Target Table Specified?}
-    D -->|Yes| E[GET /rest/v1/custom_table?select=*&limit=1]
-    D -->|No: Auto-Discovery| F[Parallel probe on common tables: users, profiles, todos...]
-    E -->|Executes genuine SQL SELECT| G[(Target PostgreSQL DB)]
-    F -->|Executes genuine SQL SELECT| G
-    G -->|Timer Reset 200 OK| B
-    B -.->|Fallback 2: API Gateway & GraphQL| H[OPTIONS /rest/v1/ & POST /graphql/v1]
-    B -.->|Fallback 3: Auth Engine Probe| I[POST /auth/v1/recover]
+    B -->|Strategy 0: Dedicated RPC?| D{RPC Installed?}
+    D -->|Yes: Recommended| E[POST /rest/v1/rpc/supapulse_heartbeat]
+    D -->|No: Fallback 1| F{Target Table Specified?}
+    F -->|Yes| G[GET /rest/v1/custom_table?select=*&limit=1]
+    F -->|No: Auto-Discovery| H[Parallel probe on common tables: users, profiles...]
+    E -->|Executes isolated SQL function| I[(Target PostgreSQL DB)]
+    G -->|Executes genuine SQL SELECT| I
+    H -->|Executes genuine SQL SELECT| I
+    I -->|Timer Reset 200 OK| B
+    B -.->|Fallback 2: API Gateway & GraphQL| J[OPTIONS /rest/v1/ & POST /graphql/v1]
+    B -.->|Fallback 3: Auth Engine Probe| K[POST /auth/v1/recover]
     B -->|Record Latency & Ping Log| C
 ```
 
-### 1. Layer 1: Direct PostgreSQL Table Read (PostgREST)
-* **Custom Table:** When registering a project, you can optionally provide a specific table name from your database (e.g. `todos`, `items`, `profiles`). Supapulse prioritizes this table for direct database reads.
-* **Auto-Discovery:** If left empty, Supapulse runs a parallel probe across the top 15 most common application tables (`reservations`, `activities`, `profiles`, `users`, `todos`, `items`, `posts`, `projects`, `accounts`, `notes`, `logs`, `settings`, `events`, etc.).
-* **Result:** PostgREST executes a real `SELECT ... LIMIT 1` query on your PostgreSQL instance, fully resetting the 7-day inactivity pause counter.
+### 🛡️ Strategy 0: Dedicated Heartbeat RPC (Recommended & Zero Data Exposure)
+Don't want to expose table names or configure Row Level Security (RLS) for anon keys? Execute this lightweight, 1-line SQL function in your Supabase project's **SQL Editor**:
 
-### 2. Layer 2: API Gateway & GraphQL Probes
-* If common tables are protected by strict Row Level Security (RLS) or use custom names, Supapulse calls `OPTIONS /rest/v1/` and `POST /graphql/v1`.
-* These requests route through Supabase's **Kong API Gateway** with your project's reference (`sb-project-ref`), registering active API traffic at the network edge.
+```sql
+create or replace function public.supapulse_heartbeat()
+returns text language sql security definer as $$ select 'pulse_ok'; $$;
+grant execute on function public.supapulse_heartbeat() to anon, authenticated;
+```
 
-### 3. Layer 3: Auth Engine Probe (GoTrue)
+* **Why it's the gold standard:**
+  * **Zero Data Exposure:** Requires no table names and reads zero rows of user data.
+  * **RLS-Proof:** Uses `SECURITY DEFINER` so strict RLS policies on your tables won't interfere.
+  * **Direct Postgres Execution:** Runs directly inside the Postgres engine via PostgREST (`POST /rest/v1/rpc/supapulse_heartbeat`), resetting the 7-day inactivity pause counter with 100% guarantee.
+
+---
+
+### 🤖 1-Click AI Agent Integration (Cursor, Windsurf, Claude)
+
+If you are developing with AI coding assistants (Cursor, Windsurf, GitHub Copilot, or Claude), simply paste this instruction into your agent:
+
+> *"Please configure my Supabase database for Supapulse keep-alive by running this SQL: `create or replace function public.supapulse_heartbeat() returns text language sql security definer as $$ select 'pulse_ok'; $$; grant execute on function public.supapulse_heartbeat() to anon, authenticated;` and then retrieve my project URL and Anon public key."*
+
+---
+
+### 1. Strategy 1: Direct PostgreSQL Table Read (PostgREST)
+* **Custom Table:** You can optionally provide a specific table name from your database (e.g. `todos`, `items`, `profiles`).
+* **Auto-Discovery:** If left empty and no RPC exists, Supapulse runs a parallel probe across the top 15 most common application tables (`reservations`, `activities`, `profiles`, `users`, `todos`, `items`, `posts`, `projects`, `accounts`, `notes`, `logs`, `settings`, `events`, etc.).
+* **Result:** PostgREST executes a real `SELECT ... LIMIT 1` query on PostgreSQL.
+
+### 2. Strategy 2: API Gateway & GraphQL Probes
+* If tables are locked down and no RPC is installed, Supapulse calls `OPTIONS /rest/v1/` and `POST /graphql/v1`.
+* Routes through Supabase's **Kong API Gateway** with your project's reference (`sb-project-ref`), registering active API traffic at the network edge.
+
+### 3. Strategy 3: Auth Engine Probe (GoTrue)
 * As a final safety net, Supapulse pings `/auth/v1/recover` and `/auth/v1/health` to stimulate the GoTrue authentication microservice.
 
 ---

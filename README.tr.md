@@ -19,7 +19,31 @@ Supapulse, Supabase ücretsiz katman projelerinizin **7 günlük inaktivite nede
 
 ## 🛠️ Nasıl Çalışır? (Çok Katmanlı Ping Stratejisi)
 
-Supabase, ücretsiz projeleri uyku moduna alırken **veritabanı sorgularını (PostgreSQL)** ve **API Gateway trafiğini** inceler. Supapulse bu süreci 3 aşamalı bir mimari ile garantiye alır:
+Supabase, ücretsiz projeleri uyku moduna alırken **veritabanı sorgularını (PostgreSQL)** ve **API Gateway trafiğini** inceler. Supapulse bu süreci 4 aşamalı kurşun geçirmez bir mimari ile garantiye alır:
+
+### 🛡️ Katman 0: Özel Heartbeat RPC (Önerilen & Sıfır Veri İfşası)
+Tablo adı paylaşmak istemiyor veya Row Level Security (RLS) kurallarıyla uğraşmak istemiyorsanız, Supabase Dashboard -> **SQL Editor** sekmesinde şu 1 satırlık fonksiyonu çalıştırın:
+
+```sql
+create or replace function public.supapulse_heartbeat()
+returns text language sql security definer as $$ select 'pulse_ok'; $$;
+grant execute on function public.supapulse_heartbeat() to anon, authenticated;
+```
+
+* **Neden En İdeal Yöntem?**
+  * **Sıfır Tablo İfşası:** Hiçbir tablo adı veya kullanıcı verisi okunmaz.
+  * **RLS Korumalı:** `SECURITY DEFINER` kullandığı için tablolardaki kilitli RLS politikalarından etkilenmez.
+  * **Doğrudan PostgreSQL Çalıştırması:** PostgREST üzerinden `POST /rest/v1/rpc/supapulse_heartbeat` çağrısı yaparak PostgreSQL motorunun uyku sayacını %100 sıfırlar.
+
+---
+
+### 🤖 AI Agent İle Tek Tıkla Kurulum (Cursor, Windsurf, Claude)
+
+Eğer projenizi bir yapay zeka kodlama asistanıyla (Cursor, Windsurf, GitHub Copilot veya Claude) geliştiriyorsanız, asistanınıza şu istemi yapıştırmanız yeterlidir:
+
+> *"Supabase veritabanımı Supapulse keep-alive servisine hazırlamak için şu SQL'i çalıştır: `create or replace function public.supapulse_heartbeat() returns text language sql security definer as $$ select 'pulse_ok'; $$; grant execute on function public.supapulse_heartbeat() to anon, authenticated;` ve ardından bana proje URL ve Anon Public Key bilgilerimi ver."*
+
+---
 
 1. **Katman 1: Doğrudan Tablo Okuma (PostgREST):**
    * Kullanıcı bir tablo belirttiyse (örn. `profiles`), doğrudan o tabloya `GET /rest/v1/profiles?select=*&limit=1` isteği atılır.
@@ -78,7 +102,7 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresine gidin.
 
 ## ⏱️ Vercel Üzerinde Cron Job Kurulumu
 
-Vercel'e deploy ederken projenize `CRON_SECRET` ortam değişkenini eklediğinizden emin olun. Vercel, `vercel.json` dosyasında tanımlanan schedule (`0 0 */3 * *`) uyarınca `/api/cron/ping` endpoint'ini periyodik olarak güvenli bir şekilde tetikleyecektir.
+Vercel'e deploy ederken projenize `CRON_SECRET` ortam değişkenini eklediğinizden emin olun. Vercel, `vercel.json` dosyasında tanımlanan schedule (`0 4 * * *`) uyarınca her gün `/api/cron/ping` endpoint'ini periyodik olarak güvenli bir şekilde tetikleyecektir.
 
 ---
 
