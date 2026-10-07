@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Globe, Key, Tag, Database, ShieldCheck, Copy, Check, Sparkles } from 'lucide-react'
+import { Plus, X, Globe, Key, Tag, Database, ShieldCheck, Copy, Check, Sparkles, Bell } from 'lucide-react'
 import { createProject } from '@/app/actions/project-actions'
 import { useLanguage } from '@/components/LanguageContext'
 
@@ -173,6 +173,21 @@ GRANT EXECUTE ON FUNCTION public.supapulse_heartbeat() TO anon, authenticated;
             />
             <p className="text-[11px] text-neutral-500 mt-1">
               {t.modal.targetTableHint}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-yellow-400" /> {t.editModal.webhookLabel}
+            </label>
+            <input
+              type="url"
+              name="webhook_url"
+              placeholder={t.editModal.webhookPlaceholder}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] text-white text-sm focus:border-[#3ecf8e] focus:outline-none placeholder-neutral-500 font-mono text-xs"
+            />
+            <p className="text-[11px] text-neutral-500 mt-1">
+              {t.editModal.webhookHint}
             </p>
           </div>
 
