@@ -10,6 +10,7 @@ create table if not exists public.projects (
   supabase_url text not null,
   anon_key text not null,
   target_table text,
+  webhook_url text,
   is_active boolean not null default true,
   last_ping_at timestamptz,
   last_ping_status text check (last_ping_status in ('success', 'failed', 'pending')),
@@ -21,6 +22,7 @@ create table if not exists public.projects (
 
 -- Migration for existing databases
 alter table public.projects add column if not exists target_table text;
+alter table public.projects add column if not exists webhook_url text;
 
 -- Indexing for fast queries
 create index if not exists idx_projects_user_id on public.projects(user_id);

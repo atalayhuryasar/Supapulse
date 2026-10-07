@@ -36,9 +36,12 @@ Setting up custom GitHub Actions workflows or external cron jobs for every proje
 
 - 🔄 **Multi-Layered Database Activity:** Executes genuine PostgREST read queries and gateway heartbeats to guarantee the Postgres pooler and Supabase API gateway reset their inactivity timer.
 - 🎯 **Optional Custom Target Table:** Specify an exact table (e.g., `todos`, `profiles`, `products`) or let Supapulse automatically probe common schema tables.
+- 🔔 **Failure Alert Webhooks:** Instant Discord, Slack, and custom webhook notifications if any heartbeat pulse fails.
+- 🛡️ **Dynamic Status Badges:** Embed Shields.io-compatible live SVG badges in your GitHub repository READMEs.
+- 📜 **Detailed Pulse Logs & Metrics:** Complete health inspection drawer with success rates, historical response latencies, and error codes.
 - 🔒 **Zero Privileged Keys:** Only your **Anon Public Key** is ever needed. Your master `service_role` secret key is **never** requested.
 - 🚀 **One-Click Deploy:** 100% serverless, zero cost on Vercel + Supabase Free Tier.
-- 📊 **Instant Dashboard:** One-click "Ping Now" button, latency tracking, uptime history bars, and status logs.
+- 📊 **Instant Dashboard:** One-click "Ping Now" button, latency tracking, uptime history bars, and in-place project editing.
 
 ---
 
@@ -104,6 +107,27 @@ Developing with AI coding assistants or want an autonomous agent to set up Supap
 
 ### 3. Strategy 3: Auth Engine Probe (GoTrue)
 * As a final safety net, Supapulse pings `/auth/v1/recover` and `/auth/v1/health` to stimulate the GoTrue authentication microservice.
+
+---
+
+### 🛡️ Live GitHub Status Badge (Shields.io Compatible)
+
+Display real-time uptime status of your Supabase projects directly on your repository `README.md`:
+
+```markdown
+[![Supapulse Status](https://supapulse.huryasar.com/api/projects/<YOUR_PROJECT_ID>/badge)](https://supapulse.huryasar.com)
+```
+
+The endpoint dynamically renders a pixel-perfect SVG badge (`awake` in emerald `#3ecf8e` when healthy, `failing` in red `#ef4444`, or `paused` in amber `#d29922`). You can copy this badge with a single click directly from your project card in the Supapulse dashboard!
+
+---
+
+### 🔔 Automated Failure Alerts (Discord & Slack Webhooks)
+
+Never miss when an unexpected schema change or network error interrupts your project's keep-alive pulse:
+* **Discord Integration:** Sends rich embed notifications with HTTP status codes, error descriptions, and project timestamps.
+* **Slack & Custom Webhooks:** Formatted webhook payloads dispatched automatically whenever a heartbeat encounters failure.
+* Includes a built-in **"Test Webhook"** button in the project settings modal to verify webhook connectivity instantly.
 
 ---
 

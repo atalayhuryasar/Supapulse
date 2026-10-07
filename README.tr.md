@@ -58,6 +58,27 @@ Yapay zeka kodlama asistanlarıyla geliştirme yapıyor veya otonom bir ajanın 
 
 ---
 
+### 🛡️ Canlı GitHub Durum Rozeti (Shields.io Uyumlu)
+
+Projelerinizin aktiflik ve uyanıklık durumunu GitHub reponuzun `README.md` dosyasında canlı bir rozet olarak sergileyebilirsiniz:
+
+```markdown
+[![Supapulse Status](https://supapulse.huryasar.com/api/projects/<PROJE_ID_BURAYA>/badge)](https://supapulse.huryasar.com)
+```
+
+Bu uç nokta, SVG tabanlı canlı bir rozet üretir (sağlıklı projeler için zümrüt yeşili `#3ecf8e` renginde `awake`, hata durumunda kırmızı `#ef4444` renginde `failing`, duraklatılmışsa sarı `#d29922` renginde `paused`). Bu kodu Supapulse panelindeki proje kartından tek tıkla kopyalayabilirsiniz!
+
+---
+
+### 🔔 Otomatik Hata Bildirimleri (Discord & Slack Webhook)
+
+Projeniz beklenmedik bir şema değişikliği, geçersiz anahtar veya ağ kesintisi nedeniyle ping alamadığında anında haberdar olun:
+* **Discord Entegrasyonu:** HTTP durum kodunu, hata açıklamasını ve zaman damgasını içeren zengin içerikli gömülü (embed) bildirimler.
+* **Slack ve Özel Webhook:** Herhangi bir kesinti durumunda otomatik olarak tetiklenen JSON uyarıları.
+* Proje düzenleme modalında webhook bağlantınızı anında test edebileceğiniz **"Test Et"** butonu bulunur.
+
+---
+
 ## 🚀 Kurulum & Çalıştırma (Self-Hosting)
 
 ### 1. Depoyu Klonlayın ve Bağımlılıkları Kurun

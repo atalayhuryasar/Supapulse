@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { pingSupabaseProject } from '@/lib/pinger'
+import { sendFailureAlert } from '@/lib/webhook'
 
 export async function POST(
   request: NextRequest,
@@ -60,6 +61,17 @@ export async function POST(
     response_time_ms: pingResult.responseTimeMs,
     message: pingResult.message,
   })
+
+  // Dispatch failure alert webhook if configured
+  if (!pingResult.success && project.webhook_url) {
+    sendFailureAlert({
+      webhookUrl: project.webhook_url,
+      projectName: project.name,
+      projectUrl: project.supabase_url,
+      statusCode: pingResult.statusCode,
+      message: pingResult.message,
+    }).catch((err) => console.error('Error dispatching webhook alert:', err))
+  }
 
   return NextResponse.json({
     success: pingResult.success,
