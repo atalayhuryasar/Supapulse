@@ -82,10 +82,13 @@ grant execute on function public.supapulse_heartbeat() to anon, authenticated;
 
 ---
 
-### 🤖 1-Click AI Agent Integration (Cursor, Windsurf, Claude)
+### 🤖 1-Click AI Agent Integration & Deployment (Cursor, Windsurf, Claude)
 
-If you are developing with AI coding assistants (Cursor, Windsurf, GitHub Copilot, or Claude), simply paste this instruction into your agent:
+Developing with AI coding assistants or want an autonomous agent to set up Supapulse for you without touching code? See our complete [AGENT_GUIDE.md](AGENT_GUIDE.md) featuring ready-to-use prompts for:
+* **Target Project Integration:** Automatically creates the heartbeat RPC migration and extracts public keys.
+* **Zero-Code Self-Hosting:** Directs autonomous agents (Claude Code, Cursor Agent, Antigravity) to deploy Supapulse on Vercel + Supabase from scratch.
 
+> **Quick Project Integration Prompt:**
 > *"Please configure my Supabase database for Supapulse keep-alive by running this SQL: `create or replace function public.supapulse_heartbeat() returns text language sql security definer as $$ select 'pulse_ok'; $$; grant execute on function public.supapulse_heartbeat() to anon, authenticated;` and then retrieve my project URL and Anon public key."*
 
 ---
