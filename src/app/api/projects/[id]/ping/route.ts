@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { pingSupabaseProject } from '@/lib/pinger'
 import { sendFailureAlert } from '@/lib/webhook'
 
+// Ping (en kötü ~41s) + await edilen uyarı (6s) varsayılan süreyi aşabilir.
+export const maxDuration = 60
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -64,13 +67,19 @@ export async function POST(
 
   // Dispatch failure alert webhook if configured
   if (!pingResult.success && project.webhook_url) {
-    sendFailureAlert({
-      webhookUrl: project.webhook_url,
-      projectName: project.name,
-      projectUrl: project.supabase_url,
-      statusCode: pingResult.statusCode,
-      message: pingResult.message,
-    }).catch((err) => console.error('Error dispatching webhook alert:', err))
+    // await: yanıt döndükten sonra serverless fonksiyonu donduğu için
+    // fire-and-forget çağrı kaybolabiliyor. sendFailureAlert'in kendi 6s timeout'u var.
+    try {
+      await sendFailureAlert({
+        webhookUrl: project.webhook_url,
+        projectName: project.name,
+        projectUrl: project.supabase_url,
+        statusCode: pingResult.statusCode,
+        message: pingResult.message,
+      })
+    } catch (err) {
+      console.error('Error dispatching webhook alert:', err)
+    }
   }
 
   return NextResponse.json({
