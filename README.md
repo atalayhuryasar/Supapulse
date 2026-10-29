@@ -122,6 +122,8 @@ The endpoint dynamically renders a pixel-perfect SVG badge (`awake` in emerald `
 
 Optional: append `?label=` to change the left-hand text. Allowed characters are letters, digits, spaces, `.`, `_` and `-`, up to 32 characters.
 
+The badge is cached for 15 seconds (`max-age=15, s-maxage=15`), so a status change shows up within ~15s — GitHub's image proxy may add its own delay on top.
+
 ---
 
 ### 🔔 Automated Failure Alerts (Discord & Slack Webhooks)

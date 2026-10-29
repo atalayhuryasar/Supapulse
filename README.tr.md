@@ -70,6 +70,8 @@ Bu uç nokta, SVG tabanlı canlı bir rozet üretir (sağlıklı projeler için 
 
 İsteğe bağlı: `?label=` ile soldaki metni değiştirebilirsiniz. İzin verilen karakterler harf, rakam, boşluk, `.`, `_` ve `-`; en fazla 32 karakter.
 
+Rozet 15 saniye cache'lenir (`max-age=15, s-maxage=15`); durum değişikliği ~15s içinde yansır. GitHub'ın görsel proxy'si bunun üzerine kendi gecikmesini ekleyebilir.
+
 ---
 
 ### 🔔 Otomatik Hata Bildirimleri (Discord & Slack Webhook)
