@@ -11,6 +11,13 @@ const BADGE_HEADERS = {
   'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
 }
 
+// Durum rozeti "şu an ayakta mı?" sinyali: 60s cache, ping sonrası bayat
+// cevap döndürüyordu. 15s, CDN korumasını korurken gecikmeyi kabaca insan
+// ölçeğine indirir. stale-while-revalidate bilinçli olarak yok — bayat
+// cevabın ne kadar süre servis edileceğini belirsizleştiriyordu.
+const BADGE_CACHE_CONTROL = 'public, max-age=15, s-maxage=15'
+const BADGE_NO_STORE = 'no-cache, no-store, must-revalidate'
+
 function generateBadgeSvg({
   label,
   value,
@@ -79,7 +86,7 @@ export async function GET(
         color: '#6e7681',
       })
       return new Response(svg, {
-        headers: { ...BADGE_HEADERS, 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        headers: { ...BADGE_HEADERS, 'Cache-Control': BADGE_NO_STORE },
       })
     }
 
@@ -109,7 +116,7 @@ export async function GET(
     return new Response(svg, {
       headers: {
         ...BADGE_HEADERS,
-        'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': BADGE_CACHE_CONTROL,
       },
     })
   } catch (err: unknown) {
@@ -119,7 +126,7 @@ export async function GET(
       color: '#f85149',
     })
     return new Response(svg, {
-      headers: { ...BADGE_HEADERS, 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+      headers: { ...BADGE_HEADERS, 'Cache-Control': BADGE_NO_STORE },
     })
   }
 }
