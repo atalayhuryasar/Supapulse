@@ -120,6 +120,8 @@ Display real-time uptime status of your Supabase projects directly on your repos
 
 The endpoint dynamically renders a pixel-perfect SVG badge (`awake` in emerald `#3ecf8e` when healthy, `failing` in red `#ef4444`, or `paused` in amber `#d29922`). You can copy this badge with a single click directly from your project card in the Supapulse dashboard!
 
+Optional: append `?label=` to change the left-hand text. Allowed characters are letters, digits, spaces, `.`, `_` and `-`, up to 32 characters.
+
 ---
 
 ### 🔔 Automated Failure Alerts (Discord & Slack Webhooks)
@@ -128,6 +130,7 @@ Never miss when an unexpected schema change or network error interrupts your pro
 * **Discord Integration:** Sends rich embed notifications with HTTP status codes, error descriptions, and project timestamps.
 * **Slack & Custom Webhooks:** Formatted webhook payloads dispatched automatically whenever a heartbeat encounters failure.
 * Includes a built-in **"Test Webhook"** button in the project settings modal to verify webhook connectivity instantly.
+* **HTTPS only:** webhook URLs must be public `https` endpoints. Loopback, private-network and cloud metadata addresses are rejected (SSRF protection), so `http://localhost` cannot be used as a webhook target.
 
 ---
 
@@ -170,7 +173,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
+# Required — /api/cron/ping fails closed when this is missing
 CRON_SECRET=your-random-cron-secret-key
+# Production: your deployed origin, used for auth redirects
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -188,7 +193,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 1. **No Sensitive Keys:** Supapulse never requests or stores Supabase `service_role` secrets. Only public `anon` / `publishable` keys are used.
 2. **Row Level Security (RLS):** Every user can only view, edit, or delete their own registered projects.
-3. **Protected Cron Worker:** The `/api/cron/ping` endpoint rejects any request without a valid `Authorization: Bearer <CRON_SECRET>` header.
+3. **Protected Cron Worker:** The `/api/cron/ping` endpoint rejects any request without a valid `Authorization: Bearer <CRON_SECRET>` header, and refuses to run at all when `CRON_SECRET` is not configured (fail closed).
+4. **Outbound request validation:** Webhook URLs must be public `https` endpoints; loopback, private, link-local and cloud metadata addresses are rejected after DNS resolution (SSRF protection).
+5. **Badge hardening:** the `?label=` parameter is whitelisted and XML-escaped, and badge responses are served with `Content-Security-Policy: default-src 'none'` and `X-Content-Type-Options: nosniff`.
 
 ---
 
