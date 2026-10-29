@@ -1,7 +1,15 @@
 import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { escapeXml, sanitizeBadgeLabel } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
+
+// Badge bir görsel; içinde script çalışmasına gerek yok.
+const BADGE_HEADERS = {
+  'Content-Type': 'image/svg+xml; charset=utf-8',
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+}
 
 function generateBadgeSvg({
   label,
@@ -22,9 +30,11 @@ function generateBadgeSvg({
 
   const labelTextX = Math.round(labelWidth / 2)
   const valueTextX = Math.round(labelWidth + valueWidth / 2)
+  const safeLabel = escapeXml(label)
+  const safeValue = escapeXml(value)
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${height}" role="img" aria-label="${label}: ${value}">
-  <title>${label}: ${value}</title>
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${height}" role="img" aria-label="${safeLabel}: ${safeValue}">
+  <title>${safeLabel}: ${safeValue}</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#fff" stop-opacity=".12"/>
     <stop offset="1" stop-opacity=".12"/>
@@ -38,10 +48,10 @@ function generateBadgeSvg({
     <rect width="${totalWidth}" height="${height}" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" text-rendering="geometricPrecision" font-size="110">
-    <text aria-hidden="true" x="${labelTextX * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="${(labelWidth - pad * 2) * 10}">${label}</text>
-    <text x="${labelTextX * 10}" y="140" transform="scale(.1)" fill="#c9d1d9" textLength="${(labelWidth - pad * 2) * 10}">${label}</text>
-    <text aria-hidden="true" x="${valueTextX * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" font-weight="bold" textLength="${(valueWidth - pad * 2) * 10}">${value}</text>
-    <text x="${valueTextX * 10}" y="140" transform="scale(.1)" fill="#ffffff" font-weight="bold" textLength="${(valueWidth - pad * 2) * 10}">${value}</text>
+    <text aria-hidden="true" x="${labelTextX * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="${(labelWidth - pad * 2) * 10}">${safeLabel}</text>
+    <text x="${labelTextX * 10}" y="140" transform="scale(.1)" fill="#c9d1d9" textLength="${(labelWidth - pad * 2) * 10}">${safeLabel}</text>
+    <text aria-hidden="true" x="${valueTextX * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" font-weight="bold" textLength="${(valueWidth - pad * 2) * 10}">${safeValue}</text>
+    <text x="${valueTextX * 10}" y="140" transform="scale(.1)" fill="#ffffff" font-weight="bold" textLength="${(valueWidth - pad * 2) * 10}">${safeValue}</text>
   </g>
 </svg>`
 }
@@ -52,7 +62,7 @@ export async function GET(
 ) {
   const { id } = await params
   const { searchParams } = new URL(request.url)
-  const customLabel = searchParams.get('label') || 'supabase'
+  const customLabel = sanitizeBadgeLabel(searchParams.get('label'))
 
   try {
     const supabase = createAdminClient()
@@ -69,10 +79,7 @@ export async function GET(
         color: '#6e7681',
       })
       return new Response(svg, {
-        headers: {
-          'Content-Type': 'image/svg+xml; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
+        headers: { ...BADGE_HEADERS, 'Cache-Control': 'no-cache, no-store, must-revalidate' },
       })
     }
 
@@ -101,7 +108,7 @@ export async function GET(
 
     return new Response(svg, {
       headers: {
-        'Content-Type': 'image/svg+xml; charset=utf-8',
+        ...BADGE_HEADERS,
         'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120',
       },
     })
@@ -112,10 +119,7 @@ export async function GET(
       color: '#f85149',
     })
     return new Response(svg, {
-      headers: {
-        'Content-Type': 'image/svg+xml; charset=utf-8',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
+      headers: { ...BADGE_HEADERS, 'Cache-Control': 'no-cache, no-store, must-revalidate' },
     })
   }
 }

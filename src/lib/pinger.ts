@@ -71,7 +71,8 @@ export async function pingSupabaseProject(
   }
 
   // 1. Primary Strategy: Direct PostgreSQL Table Read via PostgREST
-  const sanitizedTarget = targetTable?.trim().replace(/^\/+/, '')
+  // Tablo adı URL yoluna giriyor: sadece harf/rakam/alt çizgi kalsın (path traversal / sorgu enjeksiyonu).
+  const sanitizedTarget = targetTable?.trim().replace(/^\/+/, '').replace(/[^A-Za-z0-9_]/g, '')
   const commonTables = [
     ...(sanitizedTarget ? [sanitizedTarget] : []),
     'reservations',

@@ -1,3 +1,5 @@
+import { assertPublicHttpsUrl } from '@/lib/security'
+
 export interface AlertPayload {
   webhookUrl: string
   projectName: string
@@ -82,6 +84,9 @@ export async function sendFailureAlert({
   }
 
   try {
+    // SSRF koruması: yalnızca herkese açık https adreslerine istek atılır.
+    await assertPublicHttpsUrl(cleanUrl)
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 6000)
 
@@ -153,6 +158,9 @@ export async function sendTestWebhook(
   }
 
   try {
+    // SSRF koruması: yalnızca herkese açık https adreslerine istek atılır.
+    await assertPublicHttpsUrl(cleanUrl)
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 6000)
 
