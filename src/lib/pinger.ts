@@ -4,6 +4,38 @@ export interface PingResult {
   responseTimeMs: number
   message: string
   endpointTested?: string
+  /** Çağıranın zaman bütçesi bitmeden ping başlatılamadıysa true. Durum yazılmamalı. */
+  skipped?: boolean
+}
+
+/**
+ * Bir aşama için kullanılacak zaman aşımını döner.
+ * `deadline` verilmişse kalan süreyle sınırlar; süre bitmişse `null`.
+ */
+function stageBudget(deadline: number | undefined, cap: number): number | null {
+  if (deadline === undefined) return cap
+  const left = deadline - Date.now()
+  if (left <= 0) return null
+  return Math.min(cap, left)
+}
+
+function skippedResult(startTime: number): PingResult {
+  return {
+    success: false,
+    statusCode: 0,
+    responseTimeMs: Date.now() - startTime,
+    message: 'Skipped: time budget exhausted before this project could be pinged',
+    skipped: true,
+  }
+}
+
+function timedOutResult(startTime: number, stage: string): PingResult {
+  return {
+    success: false,
+    statusCode: 0,
+    responseTimeMs: Date.now() - startTime,
+    message: `Timed out: deadline exceeded during ${stage}`,
+  }
 }
 
 /**
@@ -24,7 +56,9 @@ export interface PingResult {
 export async function pingSupabaseProject(
   supabaseUrl: string,
   anonKey: string,
-  targetTable?: string | null
+  targetTable?: string | null,
+  /** Epoch ms. Verilirse hiçbir aşama bu zamanın ötesine taşmaz. */
+  deadline?: number
 ): Promise<PingResult> {
   // Normalize URL
   let cleanUrl = supabaseUrl.trim().replace(/\/+$/, '')
@@ -41,9 +75,12 @@ export async function pingSupabaseProject(
   }
 
   // 0. Golden Strategy: Dedicated Heartbeat RPC (Zero Table Exposure, RLS-Proof)
+  const rpcBudget = stageBudget(deadline, 5000)
+  if (rpcBudget === null) return skippedResult(startTime)
+
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    const timeoutId = setTimeout(() => controller.abort(), rpcBudget)
 
     const rpcRes = await fetch(`${cleanUrl}/rest/v1/rpc/supapulse_heartbeat`, {
       method: 'POST',
@@ -92,9 +129,12 @@ export async function pingSupabaseProject(
     'messages',
   ]
 
+  const tableBudget = stageBudget(deadline, 6000)
+  if (tableBudget === null) return timedOutResult(startTime, 'table probe')
+
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 6000)
+    const timeoutId = setTimeout(() => controller.abort(), tableBudget)
 
     const tablePromises = commonTables.map(async (table) => {
       const res = await fetch(`${cleanUrl}/rest/v1/${table}?select=*&limit=1`, {
@@ -161,9 +201,12 @@ export async function pingSupabaseProject(
   ]
 
   for (const ep of fallbackEndpoints) {
+    const fallbackBudget = stageBudget(deadline, 6000)
+    if (fallbackBudget === null) return timedOutResult(startTime, 'fallback probes')
+
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 6000)
+      const timeoutId = setTimeout(() => controller.abort(), fallbackBudget)
 
       const res = await fetch(`${cleanUrl}${ep.path}`, {
         ...ep.options,
