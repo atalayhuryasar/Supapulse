@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { assertPublicHttpsUrl } from '@/lib/security'
 import { revalidatePath } from 'next/cache'
 
 export async function createProject(formData: FormData) {
@@ -123,13 +124,28 @@ export async function updateProject(formData: FormData) {
 export async function toggleProjectActive(id: string, currentState: boolean) {
   const supabase = await createClient()
 
-  const { error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Oturum açmanız gerekiyor' }
+  }
+
+  const { data, error } = await supabase
     .from('projects')
     .update({ is_active: !currentState })
     .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id')
 
   if (error) {
     return { error: error.message }
+  }
+
+  // RLS 0 satır etkilerse hata dönmez; sessiz "başarılı" göstermeyelim.
+  if (!data || data.length === 0) {
+    return { error: 'Proje bulunamadı' }
   }
 
   revalidatePath('/dashboard')
@@ -139,10 +155,27 @@ export async function toggleProjectActive(id: string, currentState: boolean) {
 export async function deleteProject(id: string) {
   const supabase = await createClient()
 
-  const { error } = await supabase.from('projects').delete().eq('id', id)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Oturum açmanız gerekiyor' }
+  }
+
+  const { data, error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id')
 
   if (error) {
     return { error: error.message }
+  }
+
+  if (!data || data.length === 0) {
+    return { error: 'Proje bulunamadı' }
   }
 
   revalidatePath('/dashboard')
@@ -150,6 +183,23 @@ export async function deleteProject(id: string) {
 }
 
 export async function testWebhookAction(webhookUrl: string, projectName: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { success: false, error: 'Oturum açmanız gerekiyor' }
+  }
+
+  try {
+    // Server action herkese açık bir HTTP uç noktasıdır: keyfi URL'ye istek atmayı engelle.
+    await assertPublicHttpsUrl(webhookUrl)
+  } catch (err: unknown) {
+    return { success: false, error: (err as Error).message }
+  }
+
   const { sendTestWebhook } = await import('@/lib/webhook')
   return await sendTestWebhook(webhookUrl, projectName)
 }

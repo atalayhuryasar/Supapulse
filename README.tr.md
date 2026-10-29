@@ -68,6 +68,8 @@ Projelerinizin aktiflik ve uyanıklık durumunu GitHub reponuzun `README.md` dos
 
 Bu uç nokta, SVG tabanlı canlı bir rozet üretir (sağlıklı projeler için zümrüt yeşili `#3ecf8e` renginde `awake`, hata durumunda kırmızı `#ef4444` renginde `failing`, duraklatılmışsa sarı `#d29922` renginde `paused`). Bu kodu Supapulse panelindeki proje kartından tek tıkla kopyalayabilirsiniz!
 
+İsteğe bağlı: `?label=` ile soldaki metni değiştirebilirsiniz. İzin verilen karakterler harf, rakam, boşluk, `.`, `_` ve `-`; en fazla 32 karakter.
+
 ---
 
 ### 🔔 Otomatik Hata Bildirimleri (Discord & Slack Webhook)
@@ -76,6 +78,7 @@ Projeniz beklenmedik bir şema değişikliği, geçersiz anahtar veya ağ kesint
 * **Discord Entegrasyonu:** HTTP durum kodunu, hata açıklamasını ve zaman damgasını içeren zengin içerikli gömülü (embed) bildirimler.
 * **Slack ve Özel Webhook:** Herhangi bir kesinti durumunda otomatik olarak tetiklenen JSON uyarıları.
 * Proje düzenleme modalında webhook bağlantınızı anında test edebileceğiniz **"Test Et"** butonu bulunur.
+* **Yalnızca HTTPS:** webhook adresleri herkese açık `https` uç noktaları olmalıdır. Loopback, özel ağ ve bulut metadata adresleri reddedilir (SSRF koruması); bu nedenle `http://localhost` webhook hedefi olarak kullanılamaz.
 
 ---
 
@@ -93,7 +96,7 @@ npm install
 
 1. Yeni bir Supabase projesi oluşturun.
 2. Supabase Dashboard -> **SQL Editor** sekmesine gidin.
-3. Kök dizindeki [supabase_schema.sql](file:///Users/atalayhuryasar/Desktop/Supapulse/supabase_schema.sql) dosyasının içeriğini yapıştırıp çalıştırın (`Run`). Bu işlem `projects` ve `ping_logs` tabloları ile RLS politikalarını oluşturur.
+3. Kök dizindeki [supabase_schema.sql](./supabase_schema.sql) dosyasının içeriğini yapıştırıp çalıştırın (`Run`). Bu işlem `projects` ve `ping_logs` tabloları ile RLS politikalarını oluşturur.
 
 ### 3. Çevre Değişkenlerini Tanımlayın
 
@@ -110,7 +113,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
+# Zorunlu — tanımlı değilse /api/cron/ping çalışmayı reddeder
 CRON_SECRET=your-random-cron-secret-key
+# Prodüksiyon: auth yönlendirmelerinde kullanılan yayın adresiniz
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -127,6 +132,18 @@ Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresine gidin.
 ## ⏱️ Vercel Üzerinde Cron Job Kurulumu
 
 Vercel'e deploy ederken projenize `CRON_SECRET` ortam değişkenini eklediğinizden emin olun. Vercel, `vercel.json` dosyasında tanımlanan schedule (`0 4 * * *`) uyarınca her gün `/api/cron/ping` endpoint'ini periyodik olarak güvenli bir şekilde tetikleyecektir.
+
+`CRON_SECRET` tanımlı değilse endpoint **fail-closed** davranır: isteği işlemez ve `500` döner. Bu, yanlış yapılandırılmış bir kurulumda cron'un herkese açık kalmasını engeller.
+
+---
+
+## 🔒 Güvenlik ve Gizlilik
+
+1. **Hassas Anahtar Yok:** Supapulse hiçbir zaman Supabase `service_role` anahtarı istemez veya saklamaz. Yalnızca herkese açık `anon` / `publishable` anahtarlar kullanılır.
+2. **Row Level Security (RLS):** Her kullanıcı yalnızca kendi kayıtlı projelerini görüntüleyebilir, düzenleyebilir veya silebilir.
+3. **Korumalı Cron Worker:** `/api/cron/ping` uç noktası geçerli bir `Authorization: Bearer <CRON_SECRET>` başlığı olmayan istekleri reddeder ve `CRON_SECRET` tanımlı değilse hiç çalışmaz (fail-closed).
+4. **Giden istek doğrulaması:** Webhook adresleri herkese açık `https` uç noktaları olmalıdır; loopback, özel ağ, link-local ve bulut metadata adresleri DNS çözümlemesinden sonra reddedilir (SSRF koruması).
+5. **Rozet sertleştirmesi:** `?label=` parametresi beyaz listeye tabidir ve XML olarak kaçırılır; rozet yanıtları `Content-Security-Policy: default-src 'none'` ve `X-Content-Type-Options: nosniff` başlıklarıyla sunulur.
 
 ---
 

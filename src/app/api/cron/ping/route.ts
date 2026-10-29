@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { pingSupabaseProject } from '@/lib/pinger'
@@ -6,13 +7,27 @@ import { sendFailureAlert } from '@/lib/webhook'
 // Allows running up to 60s on Vercel Pro/Hobby
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+function safeEqual(left: string, right: string): boolean {
+  const a = Buffer.from(left)
+  const b = Buffer.from(right)
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
 
-  // Validate secret if configured
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Fail closed: secret yoksa endpoint açık kalmasın.
+  if (!cronSecret) {
+    console.error('CRON_SECRET is not configured; refusing to run the cron job.')
+    return NextResponse.json({ error: 'Cron secret is not configured' }, { status: 500 })
+  }
+
+  const provided = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : ''
+  if (!safeEqual(provided, cronSecret)) {
     return NextResponse.json({ error: 'Unauthorized: Invalid cron secret' }, { status: 401 })
   }
 
